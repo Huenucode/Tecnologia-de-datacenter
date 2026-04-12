@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux para Ansible — Fedora Server</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #21262d;
+    --border: rgba(48,54,61,1);
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --green: #3fb950;
+    --green-dim: #1a4522;
+    --green-glow: rgba(63,185,80,0.15);
+    --teal: #39d353;
+    --blue: #58a6ff;
+    --blue-dim: #1c2d40;
+    --amber: #d29922;
+    --amber-dim: #2d2000;
+    --coral: #f85149;
+    --coral-dim: #3d1a19;
+    --purple: #bc8cff;
+    --purple-dim: #2d1f4e;
+    --font: 'Plus Jakarta Sans', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; font-weight: 600; color: var(--text);
+    text-decoration: none;
+  }
+  .logo-icon {
+    width: 28px; height: 28px; background: var(--green-dim);
+    border: 1px solid var(--green); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 12px; color: var(--green);
+  }
+  .header-badge {
+    font-size: 11px; background: var(--green-dim); color: var(--green);
+    border: 1px solid rgba(63,185,80,0.3); padding: 3px 10px; border-radius: 20px;
+    font-family: var(--mono);
+  }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 4rem 2rem 3rem;
+    max-width: 900px; margin: 0 auto; text-align: center;
+  }
+  .hero-pill {
+    display: inline-block; font-size: 11px; font-family: var(--mono);
+    background: var(--green-dim); color: var(--green);
+    border: 1px solid rgba(63,185,80,0.3); padding: 4px 14px;
+    border-radius: 20px; margin-bottom: 1.5rem; letter-spacing: 0.05em;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 700; line-height: 1.15;
+    color: var(--text); margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+  .hero h1 span { color: var(--green); }
+  .hero p {
+    font-size: 16px; color: var(--muted); max-width: 520px;
+    margin: 0 auto 2.5rem;
+  }
+  .hero-stats {
+    display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;
+  }
+  .stat {
+    text-align: center;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 24px;
+  }
+  .stat-num { font-size: 22px; font-weight: 700; color: var(--green); font-family: var(--mono); }
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ── NAV TABS ── */
+  .tab-nav {
+    display: flex; gap: 4px; overflow-x: auto; padding: 1.5rem 2rem 0;
+    max-width: 900px; margin: 0 auto;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex-shrink: 0; font-family: var(--font); font-size: 13px;
+    font-weight: 500; padding: 8px 16px; border: none;
+    background: none; cursor: pointer; color: var(--muted);
+    border-bottom: 2px solid transparent; transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
+
+  /* ── MAIN CONTENT ── */
+  main {
+    max-width: 900px; margin: 0 auto;
+    padding: 2rem 2rem 4rem;
+  }
+  .panel { display: none; animation: fadein 0.2s ease; }
+  .panel.active { display: block; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .section-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ── COMMAND CARD ── */
+  .cmd-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); margin-bottom: 1rem; overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .cmd-card:hover { border-color: rgba(63,185,80,0.3); }
+  .cmd-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    cursor: pointer; user-select: none;
+  }
+  .cmd-left { display: flex; align-items: center; gap: 12px; }
+  .cmd-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 13px; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .icon-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+  .icon-blue  { background: var(--blue-dim);  color: var(--blue);  border: 1px solid rgba(88,166,255,0.3); }
+  .icon-amber { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(210,153,34,0.3); }
+  .icon-coral { background: var(--coral-dim); color: var(--coral); border: 1px solid rgba(248,81,73,0.3); }
+  .icon-purple{ background: var(--purple-dim);color: var(--purple);border: 1px solid rgba(188,140,255,0.3); }
+  .cmd-name { font-size: 15px; font-weight: 600; font-family: var(--mono); color: var(--text); }
+  .cmd-desc-short { font-size: 13px; color: var(--muted); }
+  .badge {
+    font-size: 11px; padding: 3px 10px; border-radius: 20px;
+    font-weight: 500; font-family: var(--mono); white-space: nowrap;
+  }
+  .badge-green { background: var(--green-dim); color: var(--green); }
+  .badge-blue  { background: var(--blue-dim);  color: var(--blue); }
+  .badge-amber { background: var(--amber-dim); color: var(--amber); }
+  .badge-coral { background: var(--coral-dim); color: var(--coral); }
+  .badge-purple{ background: var(--purple-dim);color: var(--purple); }
+  .chevron { color: var(--muted); transition: transform 0.2s; font-size: 12px; }
+  .cmd-card.open .chevron { transform: rotate(90deg); }
+
+  .cmd-body { display: none; padding: 16px 18px; }
+  .cmd-card.open .cmd-body { display: block; }
+
+  .cmd-desc { font-size: 14px; color: var(--muted); margin-bottom: 14px; line-height: 1.7; }
+
+  /* ── CODE BLOCKS ── */
+  .code-block {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 12px; overflow: hidden;
+  }
+  .code-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; border-bottom: 1px solid var(--border);
+  }
+  .code-label { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .copy-btn {
+    font-size: 11px; padding: 3px 10px; border-radius: 6px;
+    background: var(--bg2); border: 1px solid var(--border);
+    color: var(--muted); cursor: pointer; font-family: var(--mono);
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { color: var(--green); border-color: rgba(63,185,80,0.4); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); }
+  pre {
+    padding: 14px 16px; overflow-x: auto;
+    font-family: var(--mono); font-size: 13px;
+    line-height: 1.8; white-space: pre;
+  }
+  .prompt { color: var(--muted); }
+  .cmd-text { color: var(--green); }
+  .arg { color: var(--blue); }
+  .comment { color: #555; font-style: italic; }
+  .out { color: var(--muted); display: block; margin-left: 0; }
+  .flag { color: var(--amber); }
+  .path { color: var(--purple); }
+
+  .tip-box {
+    background: rgba(63,185,80,0.07); border: 1px solid rgba(63,185,80,0.2);
+    border-radius: var(--radius); padding: 12px 16px;
+    font-size: 13px; color: #7ee787; margin-top: 8px; line-height: 1.7;
+  }
+  .tip-box strong { color: var(--green); }
+  .warn-box {
+    background: rgba(248,81,73,0.07); border: 1px solid rgba(248,81,73,0.2);
+    border-radius: var(--radius); padding: 12px 16px;
+    font-size: 13px; color: #ffa198; margin-top: 8px; line-height: 1.7;
+  }
+  .warn-box strong { color: var(--coral); }
+
+  /* ── EXERCISE ── */
+  .exercise {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); margin-bottom: 1.5rem; overflow: hidden;
+  }
+  .ex-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .ex-num {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--green-dim); border: 1px solid rgba(63,185,80,0.4);
+    color: var(--green); font-family: var(--mono); font-size: 14px;
+    font-weight: 700; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .ex-info {}
+  .ex-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .ex-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .ex-body { padding: 18px 20px; }
+  .step {
+    font-size: 14px; color: var(--text); margin-bottom: 8px; font-weight: 500;
+    display: flex; gap: 8px; align-items: baseline;
+  }
+  .step-num {
+    font-family: var(--mono); font-size: 11px; color: var(--green);
+    background: var(--green-dim); border-radius: 4px;
+    padding: 1px 6px; flex-shrink: 0;
+  }
+  .verify {
+    background: rgba(210,153,34,0.08); border: 1px solid rgba(210,153,34,0.25);
+    border-radius: var(--radius); padding: 12px 16px; margin-top: 14px;
+  }
+  .verify-label {
+    font-size: 11px; font-weight: 600; color: var(--amber);
+    font-family: var(--mono); letter-spacing: 0.05em; margin-bottom: 8px;
+  }
+
+  /* ── ANSIBLE YAML ── */
+  .yaml-key   { color: var(--blue); }
+  .yaml-val   { color: var(--green); }
+  .yaml-str   { color: #f0883e; }
+  .yaml-cmt   { color: #555; font-style: italic; }
+  .yaml-dash  { color: var(--muted); }
+
+  /* ── CHEAT TABLE ── */
+  .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left; padding: 10px 16px;
+    background: var(--bg3); color: var(--muted);
+    font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; font-family: var(--mono);
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 10px 16px; border-bottom: 1px solid rgba(48,54,61,0.5); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  td:first-child { font-family: var(--mono); color: var(--green); font-size: 12px; }
+  td:nth-child(2) { color: var(--muted); }
+  td:nth-child(3) { color: var(--blue); font-family: var(--mono); font-size: 12px; }
+
+  /* ── GRID CARDS ── */
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .info-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px;
+  }
+  .info-card-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .info-card-value { font-size: 15px; font-weight: 600; color: var(--text); }
+  .info-card-mono { font-family: var(--mono); color: var(--green); font-size: 13px; margin-top: 4px; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center; padding: 2rem;
+    color: var(--muted); font-size: 12px;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--green); text-decoration: none; }
+
+  /* ── SCROLL TOP ── */
+  #scroll-top {
+    position: fixed; bottom: 2rem; right: 2rem; z-index: 99;
+    width: 40px; height: 40px; background: var(--bg2);
+    border: 1px solid var(--border); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); font-size: 16px;
+    transition: all 0.15s; opacity: 0; pointer-events: none;
+  }
+  #scroll-top.visible { opacity: 1; pointer-events: all; }
+  #scroll-top:hover { color: var(--green); border-color: rgba(63,185,80,0.4); }
+
+  /* MOBILE */
+  @media (max-width: 600px) {
+    .hero { padding: 2.5rem 1.25rem 2rem; }
+    main { padding: 1.5rem 1.25rem 3rem; }
+    .tab-nav { padding: 1rem 1.25rem 0; }
+    header { padding: 0 1.25rem; }
+    .hero h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="#">
+    <div class="logo-icon">$_</div>
+    Linux → Ansible
+  </a>
+  <span class="header-badge">Fedora Server</span>
+</header>
+
+<section class="hero">
+  <div class="hero-pill">Guía de comandos esenciales</div>
+  <h1>Domina Linux para<br><span>automatizar con Ansible</span></h1>
+  <p>Navega, crea archivos, gestiona permisos y construye la estructura de un proyecto real.</p>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">20+</div><div class="stat-label">Comandos</div></div>
+    <div class="stat"><div class="stat-num">4</div><div class="stat-label">Ejercicios prácticos</div></div>
+    <div class="stat"><div class="stat-num">1</div><div class="stat-label">Proyecto final</div></div>
+    <div class="stat"><div class="stat-num">∞</div><div class="stat-label">Copy &amp; Paste</div></div>
+  </div>
+</section>
+
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('nav',this)">🧭 Navegación</button>
+  <button class="tab-btn" onclick="showTab('archivos',this)">📁 Archivos</button>
+  <button class="tab-btn" onclick="showTab('permisos',this)">🔒 Permisos</button>
+  <button class="tab-btn" onclick="showTab('ejercicios',this)">🏋️ Ejercicios</button>
+  <button class="tab-btn" onclick="showTab('ansible',this)">⚙️ Ansible</button>
+  <button class="tab-btn" onclick="showTab('cheatsheet',this)">📋 Cheat Sheet</button>
+</nav>
+
+<main>
+
+<!-- ══════════════════════════════════════════════════
+     NAV
+══════════════════════════════════════════════════ -->
+<div id="nav" class="panel active">
+  <p class="section-title">comandos de navegación</p>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-green">pwd</div>
+        <div>
+          <div class="cmd-name">pwd</div>
+          <div class="cmd-desc-short">Print Working Directory</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-green">básico</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <p class="cmd-desc">Muestra la ruta absoluta del directorio en el que te encuentras actualmente. Siempre úsalo para saber dónde estás antes de crear archivos.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">ejemplo</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">pwd</span>
+<span class="out">/home/seba</span>
+
+<span class="prompt">$ </span><span class="cmd-text">pwd</span>
+<span class="out">/etc/ansible</span></pre>
+      </div>
+      <div class="tip-box"><strong>Tip:</strong> Si alguna vez estás perdido en la terminal, escribe <code>pwd</code> para orientarte.</div>
+    </div>
+  </div>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-green">ls</div>
+        <div>
+          <div class="cmd-name">ls</div>
+          <div class="cmd-desc-short">Listar contenido de un directorio</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-green">básico</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <p class="cmd-desc">Lista los archivos y carpetas del directorio actual o del que le indiques. Con opciones puedes ver detalles, archivos ocultos y más.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">uso básico</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">ls</span>                   <span class="comment"># lista simple</span>
+<span class="prompt">$ </span><span class="cmd-text">ls</span> <span class="flag">-l</span>               <span class="comment"># formato largo (permisos, tamaño)</span>
+<span class="prompt">$ </span><span class="cmd-text">ls</span> <span class="flag">-la</span>              <span class="comment"># incluye archivos ocultos</span>
+<span class="prompt">$ </span><span class="cmd-text">ls</span> <span class="flag">-lh</span>              <span class="comment"># tamaño legible (KB, MB)</span>
+<span class="prompt">$ </span><span class="cmd-text">ls</span> <span class="path">/etc/ansible</span>     <span class="comment"># lista otro directorio</span></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">salida de ls -la</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="out">total 20
+drwxr-xr-x. 4 seba seba  68 abr 10 09:00 .
+drwxr-xr-x. 3 root root  20 abr 10 08:00 ..
+drwxr-xr-x. 2 seba seba   6 abr 10 09:00 inventario
+drwxr-xr-x. 2 seba seba  40 abr 10 09:00 playbooks
+-rw-r--r--. 1 seba seba 230 abr 10 09:00 ansible.cfg</span></pre>
+      </div>
+      <div class="tip-box"><strong>Tip:</strong> La primera columna muestra los permisos. <code>d</code> al inicio significa directorio.</div>
+    </div>
+  </div>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-green">cd</div>
+        <div>
+          <div class="cmd-name">cd</div>
+          <div class="cmd-desc-short">Change Directory</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-green">básico</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <p class="cmd-desc">Navega entre directorios. Es el comando que más usarás en la terminal.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">variantes de cd</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">cd</span> <span class="path">/home/seba</span>         <span class="comment"># ruta absoluta</span>
+<span class="prompt">$ </span><span class="cmd-text">cd</span> <span class="path">ansible-lab</span>       <span class="comment"># ruta relativa</span>
+<span class="prompt">$ </span><span class="cmd-text">cd</span> <span class="path">..</span>               <span class="comment"># sube un nivel</span>
+<span class="prompt">$ </span><span class="cmd-text">cd</span> <span class="path">../..</span>            <span class="comment"># sube dos niveles</span>
+<span class="prompt">$ </span><span class="cmd-text">cd</span> <span class="path">~</span>                <span class="comment"># va a tu home</span>
+<span class="prompt">$ </span><span class="cmd-text">cd</span> <span class="path">-</span>                <span class="comment"># regresa al directorio anterior</span></pre>
+      </div>
+      <div class="tip-box"><strong>Tip:</strong> Presiona <kbd>Tab</kbd> para autocompletar rutas. Presiona dos veces para ver opciones disponibles.</div>
+    </div>
+  </div>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-blue">tree</div>
+        <div>
+          <div class="cmd-name">tree</div>
+          <div class="cmd-desc-short">Ver estructura en árbol</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-blue">visual</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <p class="cmd-desc">Muestra la jerarquía de carpetas y archivos visualmente. Muy útil para verificar la estructura de tu proyecto Ansible.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">instalar y usar</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">sudo dnf install</span> <span class="arg">tree</span> <span class="flag">-y</span>
+
+<span class="prompt">$ </span><span class="cmd-text">tree</span> <span class="path">~/ansible-lab</span>
+<span class="prompt">$ </span><span class="cmd-text">tree</span> <span class="flag">-L 2</span> <span class="path">~/ansible-lab</span>    <span class="comment"># máximo 2 niveles</span>
+<span class="prompt">$ </span><span class="cmd-text">tree</span> <span class="flag">-a</span> <span class="path">~/ansible-lab</span>     <span class="comment"># incluye ocultos</span></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">salida esperada</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="out">ansible-lab/
+├── ansible.cfg
+├── inventario/
+│   └── hosts
+├── playbooks/
+│   ├── site.yml
+│   └── setup.yml
+└── roles/
+    └── webserver/
+
+4 directories, 4 files</span></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     ARCHIVOS
+══════════════════════════════════════════════════ -->
+<div id="archivos" class="panel">
+  <p class="section-title">gestión de archivos y directorios</p>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-green">mkdir</div>
+        <div>
+          <div class="cmd-name">mkdir</div>
+          <div class="cmd-desc-short">Make Directory — crear carpetas</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-green">creación</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <p class="cmd-desc">Crea directorios. La opción <code>-p</code> es fundamental para Ansible: crea toda la ruta aunque las carpetas intermedias no existan, y no falla si ya existe.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">ejemplos</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">mkdir</span> <span class="path">proyecto</span>
+
+<span class="comment"># -p: crea toda la ruta de una vez</span>
+<span class="prompt">$ </span><span class="cmd-text">mkdir</span> <span class="flag">-p</span> <span class="path">ansible-lab/inventario</span>
+<span class="prompt">$ </span><span class="cmd-text">mkdir</span> <span class="flag">-p</span> <span class="path">ansible-lab/{inventario,playbooks,roles,group_vars}</span>
+
+<span class="comment"># estructura completa de un rol</span>
+<span class="prompt">$ </span><span class="cmd-text">mkdir</span> <span class="flag">-p</span> <span class="path">roles/webserver/{tasks,handlers,templates,files,vars,defaults,meta}</span></pre>
+      </div>
+      <div class="tip-box"><strong>Tip:</strong> La sintaxis <code>{a,b,c}</code> (brace expansion) crea múltiples carpetas en un solo comando.</div>
+    </div>
+  </div>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-green">touch</div>
+        <div>
+          <div class="cmd-name">touch</div>
+          <div class="cmd-desc-short">Crear archivos vacíos</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-green">creación</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <p class="cmd-desc">Crea un archivo vacío si no existe, o actualiza la fecha de modificación si ya existe. Ideal para crear los archivos YAML de Ansible antes de editarlos.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">ejemplos</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">touch</span> <span class="path">inventario/hosts</span>
+<span class="prompt">$ </span><span class="cmd-text">touch</span> <span class="path">playbooks/{site,setup,usuarios,db}.yml</span>
+<span class="prompt">$ </span><span class="cmd-text">touch</span> <span class="path">roles/webserver/tasks/main.yml</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-blue">echo / cat</div>
+        <div>
+          <div class="cmd-name">echo &amp; cat</div>
+          <div class="cmd-desc-short">Escribir y leer contenido</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-blue">contenido</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <p class="cmd-desc"><code>echo</code> imprime texto. Con <code>&gt;</code> sobreescribe un archivo y con <code>&gt;&gt;</code> agrega al final. <code>cat</code> muestra el contenido de un archivo.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">echo con redirección</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">echo</span> <span class="arg">"[webservers]"</span> <span class="flag">&gt;</span> <span class="path">inventario/hosts</span>
+<span class="prompt">$ </span><span class="cmd-text">echo</span> <span class="arg">"192.168.1.10"</span> <span class="flag">&gt;&gt;</span> <span class="path">inventario/hosts</span>
+<span class="prompt">$ </span><span class="cmd-text">cat</span> <span class="path">inventario/hosts</span>
+<span class="out">[webservers]
+192.168.1.10</span></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">heredoc — escribir varias líneas</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">cat</span> <span class="flag">&gt;</span> <span class="path">inventario/hosts</span> <span class="flag">&lt;&lt; 'EOF'</span>
+[webservers]
+192.168.1.10
+192.168.1.11
+
+[dbservers]
+192.168.1.20
+EOF</pre>
+      </div>
+      <div class="tip-box"><strong>Tip:</strong> El heredoc <code>&lt;&lt; 'EOF'</code> es la forma más rápida de escribir bloques de texto en un archivo desde la terminal.</div>
+    </div>
+  </div>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-amber">nano</div>
+        <div>
+          <div class="cmd-name">nano</div>
+          <div class="cmd-desc-short">Editor de texto en terminal</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-amber">edición</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <p class="cmd-desc">Editor de texto interactivo dentro de la terminal. Ideal para editar archivos YAML de Ansible. Es más amigable que Vim para comenzar.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">abrir y atajos</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">nano</span> <span class="path">playbooks/site.yml</span>
+
+<span class="comment">  Ctrl + S  →  guardar</span>
+<span class="comment">  Ctrl + X  →  salir</span>
+<span class="comment">  Ctrl + K  →  cortar línea</span>
+<span class="comment">  Ctrl + W  →  buscar texto</span>
+<span class="comment">  Ctrl + /  →  ir a línea número</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-amber">cp / mv</div>
+        <div>
+          <div class="cmd-name">cp &amp; mv</div>
+          <div class="cmd-desc-short">Copiar y mover archivos</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-amber">gestión</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <p class="cmd-desc"><code>cp</code> copia archivos o directorios. <code>mv</code> los mueve o renombra. Usa <code>-r</code> con cp para copiar directorios completos.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">cp — copiar</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">cp</span> <span class="path">ansible.cfg</span> <span class="path">ansible.cfg.bak</span>           <span class="comment"># backup</span>
+<span class="prompt">$ </span><span class="cmd-text">cp</span> <span class="flag">-r</span> <span class="path">roles/webserver</span> <span class="path">roles/appserver</span>  <span class="comment"># copiar dir</span>
+<span class="prompt">$ </span><span class="cmd-text">cp</span> <span class="path">~/plantilla.yml</span> <span class="path">playbooks/nuevo.yml</span>   <span class="comment"># desde otro dir</span></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">mv — mover/renombrar</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">mv</span> <span class="path">setup.yml</span> <span class="path">instalacion.yml</span>        <span class="comment"># renombrar</span>
+<span class="prompt">$ </span><span class="cmd-text">mv</span> <span class="path">~/hosts</span> <span class="path">inventario/hosts</span>         <span class="comment"># mover archivo</span>
+<span class="prompt">$ </span><span class="cmd-text">mv</span> <span class="path">roles/old</span> <span class="path">/opt/backups/roles/</span>    <span class="comment"># mover directorio</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-coral">rm</div>
+        <div>
+          <div class="cmd-name">rm</div>
+          <div class="cmd-desc-short">Remove — eliminar archivos</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-coral">¡cuidado!</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <p class="cmd-desc">Elimina archivos y directorios. En Linux <strong>no hay papelera</strong> desde terminal — lo que borras, se va.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">uso seguro</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">rm</span> <span class="path">archivo.yml</span>             <span class="comment"># eliminar archivo</span>
+<span class="prompt">$ </span><span class="cmd-text">rm</span> <span class="flag">-i</span> <span class="path">archivo.yml</span>          <span class="comment"># pide confirmación (-i es seguro)</span>
+<span class="prompt">$ </span><span class="cmd-text">rm</span> <span class="flag">-r</span> <span class="path">roles/backup/</span>        <span class="comment"># eliminar directorio</span>
+<span class="prompt">$ </span><span class="cmd-text">rm</span> <span class="flag">-rf</span> <span class="path">roles/backup/</span>       <span class="comment"># forzado, sin preguntar</span></pre>
+      </div>
+      <div class="warn-box"><strong>⚠ Nunca uses:</strong> <code>rm -rf /</code> ni <code>rm -rf /*</code> — borraría todo el sistema operativo. Verifica siempre la ruta antes de ejecutar <code>rm -rf</code>.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PERMISOS
+══════════════════════════════════════════════════ -->
+<div id="permisos" class="panel">
+  <p class="section-title">permisos de archivos</p>
+
+  <div class="grid2">
+    <div class="info-card">
+      <div class="info-card-label">Formato de permisos</div>
+      <div class="info-card-value">rwxrwxrwx</div>
+      <div class="info-card-mono">dueño | grupo | otros</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-label">Valores numéricos</div>
+      <div class="info-card-value">r=4, w=2, x=1</div>
+      <div class="info-card-mono">rwx = 4+2+1 = 7</div>
+    </div>
+  </div>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-amber">chmod</div>
+        <div>
+          <div class="cmd-name">chmod</div>
+          <div class="cmd-desc-short">Change Mode — cambiar permisos</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-amber">permisos</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <p class="cmd-desc">Define quién puede leer (r=4), escribir (w=2) o ejecutar (x=1) un archivo. Ansible requiere permisos específicos para funcionar correctamente.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">uso con números</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">chmod</span> <span class="arg">644</span> <span class="path">ansible.cfg</span>         <span class="comment"># rw-r--r--</span>
+<span class="prompt">$ </span><span class="cmd-text">chmod</span> <span class="arg">755</span> <span class="path">playbooks/</span>          <span class="comment"># rwxr-xr-x</span>
+<span class="prompt">$ </span><span class="cmd-text">chmod</span> <span class="arg">600</span> <span class="path">~/.ssh/id_rsa</span>       <span class="comment"># rw------- (clave SSH)</span>
+<span class="prompt">$ </span><span class="cmd-text">chmod</span> <span class="flag">-R</span> <span class="arg">644</span> <span class="path">playbooks/</span>      <span class="comment"># aplica a todo el dir</span></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">aplicar a proyecto completo</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="comment"># directorios: 755</span>
+<span class="prompt">$ </span><span class="cmd-text">find</span> <span class="path">~/ansible-lab</span> <span class="flag">-type d</span> <span class="flag">-exec</span> <span class="cmd-text">chmod</span> <span class="arg">755</span> {} \;
+
+<span class="comment"># archivos: 644</span>
+<span class="prompt">$ </span><span class="cmd-text">find</span> <span class="path">~/ansible-lab</span> <span class="flag">-type f</span> <span class="flag">-exec</span> <span class="cmd-text">chmod</span> <span class="arg">644</span> {} \;</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-amber">chown</div>
+        <div>
+          <div class="cmd-name">chown</div>
+          <div class="cmd-desc-short">Change Owner — cambiar propietario</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-amber">permisos</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <p class="cmd-desc">Cambia el usuario y/o grupo dueño de un archivo o directorio.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">ejemplos</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">sudo chown</span> <span class="arg">seba:seba</span> <span class="path">archivo.yml</span>
+<span class="prompt">$ </span><span class="cmd-text">sudo chown</span> <span class="flag">-R</span> <span class="arg">seba:seba</span> <span class="path">~/ansible-lab/</span>
+<span class="prompt">$ </span><span class="cmd-text">sudo chown</span> <span class="arg">root:ansible</span> <span class="path">/etc/ansible/ansible.cfg</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <p class="section-title" style="margin-top:2rem">tabla de permisos comunes</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Número</th><th>Símbolo</th><th>Uso típico</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>700</td><td>rwx------</td><td>Directorio privado del dueño</td></tr>
+        <tr><td>755</td><td>rwxr-xr-x</td><td>Carpetas del proyecto Ansible</td></tr>
+        <tr><td>644</td><td>rw-r--r--</td><td>Archivos de configuración / YAML</td></tr>
+        <tr><td>600</td><td>rw-------</td><td>Claves SSH privadas (~/.ssh/id_rsa)</td></tr>
+        <tr><td>400</td><td>r--------</td><td>Vault de Ansible (solo lectura)</td></tr>
+        <tr><td>775</td><td>rwxrwxr-x</td><td>Carpetas compartidas con grupo</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tip-box"><strong>Ansible requiere:</strong> directorios en 755, playbooks en 644, claves SSH en 600. Si los permisos son incorrectos, Ansible fallará con error de autenticación.</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     EJERCICIOS
+══════════════════════════════════════════════════ -->
+<div id="ejercicios" class="panel">
+  <p class="section-title">práctica guiada</p>
+
+  <div class="exercise">
+    <div class="ex-header">
+      <div class="ex-num">01</div>
+      <div class="ex-info">
+        <div class="ex-title">Crear la estructura base del proyecto Ansible</div>
+        <div class="ex-sub">Comandos: mkdir -p, tree, ls</div>
+      </div>
+    </div>
+    <div class="ex-body">
+      <div class="step"><span class="step-num">1</span> Ir a tu directorio home:</div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">cd</span> <span class="path">~</span>
+<span class="prompt">$ </span><span class="cmd-text">pwd</span></pre>
+      </div>
+      <div class="step"><span class="step-num">2</span> Crear toda la estructura en un solo comando:</div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">mkdir</span> <span class="flag">-p</span> <span class="path">~/ansible-lab/{inventario,playbooks,roles,group_vars,host_vars}</span></pre>
+      </div>
+      <div class="step"><span class="step-num">3</span> Crear archivos base vacíos:</div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">touch</span> <span class="path">~/ansible-lab/inventario/hosts</span>
+<span class="prompt">$ </span><span class="cmd-text">touch</span> <span class="path">~/ansible-lab/playbooks/site.yml</span>
+<span class="prompt">$ </span><span class="cmd-text">touch</span> <span class="path">~/ansible-lab/ansible.cfg</span></pre>
+      </div>
+      <div class="step"><span class="step-num">4</span> Verificar la estructura:</div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">tree</span> <span class="path">~/ansible-lab</span></pre>
+      </div>
+      <div class="verify">
+        <div class="verify-label">✓ VERIFICAR</div>
+        <div class="code-block" style="margin:0">
+          <div class="code-header"><span class="code-label">comando de verificación</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+          <pre><span class="prompt">$ </span><span class="cmd-text">ls</span> <span class="path">~/ansible-lab</span> | <span class="cmd-text">wc</span> <span class="flag">-l</span>
+<span class="out">5   ← debe mostrar 5 (cinco carpetas + ansible.cfg)</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="exercise">
+    <div class="ex-header">
+      <div class="ex-num">02</div>
+      <div class="ex-info">
+        <div class="ex-title">Crear el inventario de hosts</div>
+        <div class="ex-sub">Comandos: cat heredoc, echo, grep</div>
+      </div>
+    </div>
+    <div class="ex-body">
+      <div class="step"><span class="step-num">1</span> Escribir el inventario con heredoc:</div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">cat</span> <span class="flag">&gt;</span> <span class="path">~/ansible-lab/inventario/hosts</span> <span class="flag">&lt;&lt; 'EOF'</span>
+[webservers]
+192.168.1.10
+192.168.1.11
+
+[dbservers]
+192.168.1.20
+
+[all:vars]
+ansible_user=admin
+ansible_python_interpreter=/usr/bin/python3
+EOF</pre>
+      </div>
+      <div class="step"><span class="step-num">2</span> Leer el archivo creado:</div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">cat</span> <span class="path">~/ansible-lab/inventario/hosts</span></pre>
+      </div>
+      <div class="step"><span class="step-num">3</span> Hacer un backup del inventario:</div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">cp</span> <span class="path">~/ansible-lab/inventario/hosts</span> <span class="path">~/ansible-lab/inventario/hosts.bak</span></pre>
+      </div>
+      <div class="verify">
+        <div class="verify-label">✓ VERIFICAR</div>
+        <div class="code-block" style="margin:0">
+          <div class="code-header"><span class="code-label">contar IPs en el inventario</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+          <pre><span class="prompt">$ </span><span class="cmd-text">grep</span> <span class="flag">-c</span> <span class="arg">"192.168"</span> <span class="path">~/ansible-lab/inventario/hosts</span>
+<span class="out">3   ← debe mostrar 3</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="exercise">
+    <div class="ex-header">
+      <div class="ex-num">03</div>
+      <div class="ex-info">
+        <div class="ex-title">Aplicar permisos correctos al proyecto</div>
+        <div class="ex-sub">Comandos: chmod, find, stat</div>
+      </div>
+    </div>
+    <div class="ex-body">
+      <div class="step"><span class="step-num">1</span> Aplicar 755 a todos los directorios:</div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">find</span> <span class="path">~/ansible-lab</span> <span class="flag">-type d</span> <span class="flag">-exec</span> <span class="cmd-text">chmod</span> <span class="arg">755</span> {} \;</pre>
+      </div>
+      <div class="step"><span class="step-num">2</span> Aplicar 644 a todos los archivos:</div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">find</span> <span class="path">~/ansible-lab</span> <span class="flag">-type f</span> <span class="flag">-exec</span> <span class="cmd-text">chmod</span> <span class="arg">644</span> {} \;</pre>
+      </div>
+      <div class="step"><span class="step-num">3</span> Verificar permisos con ls:</div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">ls</span> <span class="flag">-la</span> <span class="path">~/ansible-lab/inventario/</span></pre>
+      </div>
+      <div class="verify">
+        <div class="verify-label">✓ VERIFICAR</div>
+        <div class="code-block" style="margin:0">
+          <div class="code-header"><span class="code-label">ver permisos exactos del archivo hosts</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+          <pre><span class="prompt">$ </span><span class="cmd-text">stat</span> <span class="flag">-c</span> <span class="arg">"%a %n"</span> <span class="path">~/ansible-lab/inventario/hosts</span>
+<span class="out">644 /home/seba/ansible-lab/inventario/hosts</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="exercise">
+    <div class="ex-header">
+      <div class="ex-num">04</div>
+      <div class="ex-info">
+        <div class="ex-title">Desafío final: estructura completa con roles</div>
+        <div class="ex-sub">Todos los comandos vistos — estructura lista para producción</div>
+      </div>
+    </div>
+    <div class="ex-body">
+      <div class="step"><span class="step-num">1</span> Crear la estructura completa del rol webserver:</div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">mkdir</span> <span class="flag">-p</span> <span class="path">~/ansible-lab/roles/webserver/{tasks,handlers,templates,files,vars,defaults,meta}</span>
+<span class="prompt">$ </span><span class="cmd-text">touch</span> <span class="path">~/ansible-lab/roles/webserver/tasks/main.yml</span>
+<span class="prompt">$ </span><span class="cmd-text">touch</span> <span class="path">~/ansible-lab/roles/webserver/handlers/main.yml</span>
+<span class="prompt">$ </span><span class="cmd-text">touch</span> <span class="path">~/ansible-lab/roles/webserver/defaults/main.yml</span>
+<span class="prompt">$ </span><span class="cmd-text">touch</span> <span class="path">~/ansible-lab/roles/webserver/meta/main.yml</span></pre>
+      </div>
+      <div class="step"><span class="step-num">2</span> Crear el playbook principal:</div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">cat</span> <span class="flag">&gt;</span> <span class="path">~/ansible-lab/playbooks/site.yml</span> <span class="flag">&lt;&lt; 'EOF'</span>
+---
+- name: Configurar servidores web
+  hosts: webservers
+  roles:
+    - webserver
+EOF</pre>
+      </div>
+      <div class="step"><span class="step-num">3</span> Ver la estructura final:</div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">tree</span> <span class="path">~/ansible-lab</span></pre>
+      </div>
+      <div class="verify">
+        <div class="verify-label">✓ RESULTADO ESPERADO</div>
+        <div class="code-block" style="margin:0">
+          <div class="code-header"><span class="code-label">contar directorios creados</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+          <pre><span class="prompt">$ </span><span class="cmd-text">find</span> <span class="path">~/ansible-lab</span> <span class="flag">-type d</span> | <span class="cmd-text">wc</span> <span class="flag">-l</span>
+<span class="out">13  ← debe mostrar 13 o más directorios</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     ANSIBLE
+══════════════════════════════════════════════════ -->
+<div id="ansible" class="panel">
+  <p class="section-title">introducción a ansible</p>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-purple">inst</div>
+        <div>
+          <div class="cmd-name">Instalar Ansible en Fedora</div>
+          <div class="cmd-desc-short">via dnf</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-purple">setup</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">instalación</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="prompt">$ </span><span class="cmd-text">sudo dnf install</span> <span class="arg">ansible</span> <span class="flag">-y</span>
+<span class="prompt">$ </span><span class="cmd-text">ansible</span> <span class="flag">--version</span>
+<span class="out">ansible [core 2.16.x]
+  python version = 3.12.x
+  jinja version = 3.1.x</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-purple">cfg</div>
+        <div>
+          <div class="cmd-name">ansible.cfg</div>
+          <div class="cmd-desc-short">Configuración base del proyecto</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-purple">config</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <p class="cmd-desc">Archivo de configuración principal de Ansible. Colócalo en la raíz de tu proyecto.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">~/ansible-lab/ansible.cfg</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="yaml-cmt"># ansible.cfg</span>
+<span class="yaml-key">[defaults]</span>
+<span class="yaml-val">inventory</span>             = <span class="yaml-str">inventario/hosts</span>
+<span class="yaml-val">remote_user</span>           = <span class="yaml-str">admin</span>
+<span class="yaml-val">host_key_checking</span>     = <span class="yaml-str">False</span>
+<span class="yaml-val">retry_files_enabled</span>   = <span class="yaml-str">False</span>
+<span class="yaml-val">roles_path</span>            = <span class="yaml-str">roles</span>
+
+<span class="yaml-key">[privilege_escalation]</span>
+<span class="yaml-val">become</span>                = <span class="yaml-str">True</span>
+<span class="yaml-val">become_method</span>         = <span class="yaml-str">sudo</span>
+<span class="yaml-val">become_ask_pass</span>       = <span class="yaml-str">False</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-purple">inv</div>
+        <div>
+          <div class="cmd-name">Inventario de hosts</div>
+          <div class="cmd-desc-short">Definir los servidores gestionados</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-purple">inventario</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">inventario/hosts</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="yaml-cmt"># Formato INI — el más común para empezar</span>
+<span class="yaml-key">[webservers]</span>
+192.168.1.10
+192.168.1.11  <span class="yaml-cmt">ansible_host=192.168.1.11</span>
+
+<span class="yaml-key">[dbservers]</span>
+192.168.1.20
+
+<span class="yaml-key">[all:vars]</span>
+ansible_user=admin
+ansible_python_interpreter=/usr/bin/python3</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-purple">yml</div>
+        <div>
+          <div class="cmd-name">Playbook — site.yml</div>
+          <div class="cmd-desc-short">Primer playbook de ejemplo</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-purple">playbook</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">playbooks/site.yml</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="yaml-cmt">---</span>
+<span class="yaml-cmt"># Playbook principal del proyecto</span>
+
+<span class="yaml-dash">-</span> <span class="yaml-key">name</span>: <span class="yaml-str">Configurar servidores web</span>
+  <span class="yaml-key">hosts</span>: <span class="yaml-str">webservers</span>
+  <span class="yaml-key">roles</span>:
+    <span class="yaml-dash">-</span> <span class="yaml-str">webserver</span>
+
+<span class="yaml-dash">-</span> <span class="yaml-key">name</span>: <span class="yaml-str">Instalar base de datos</span>
+  <span class="yaml-key">hosts</span>: <span class="yaml-str">dbservers</span>
+  <span class="yaml-key">tasks</span>:
+    <span class="yaml-dash">-</span> <span class="yaml-key">name</span>: <span class="yaml-str">Instalar MariaDB</span>
+      <span class="yaml-key">ansible.builtin.dnf</span>:
+        <span class="yaml-key">name</span>: <span class="yaml-str">mariadb-server</span>
+        <span class="yaml-key">state</span>: <span class="yaml-str">present</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="cmd-card">
+    <div class="cmd-top" onclick="toggle(this)">
+      <div class="cmd-left">
+        <div class="cmd-icon icon-purple">run</div>
+        <div>
+          <div class="cmd-name">Comandos para ejecutar Ansible</div>
+          <div class="cmd-desc-short">Los que más usarás cada día</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge badge-purple">ejecución</span>
+        <span class="chevron">▶</span>
+      </div>
+    </div>
+    <div class="cmd-body">
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">comandos esenciales</span><button class="copy-btn" onclick="copyCode(this)">copiar</button></div>
+        <pre><span class="comment"># Verificar conectividad con los hosts</span>
+<span class="prompt">$ </span><span class="cmd-text">ansible</span> <span class="arg">all</span> <span class="flag">-m ping</span>
+
+<span class="comment"># Ver el inventario en formato YAML</span>
+<span class="prompt">$ </span><span class="cmd-text">ansible-inventory</span> <span class="flag">--list -y</span>
+
+<span class="comment"># Simulación — dry run (no hace cambios)</span>
+<span class="prompt">$ </span><span class="cmd-text">ansible-playbook</span> <span class="path">playbooks/site.yml</span> <span class="flag">--check</span>
+
+<span class="comment"># Ejecutar el playbook</span>
+<span class="prompt">$ </span><span class="cmd-text">ansible-playbook</span> <span class="path">playbooks/site.yml</span>
+
+<span class="comment"># Ejecutar con más detalle (verbose)</span>
+<span class="prompt">$ </span><span class="cmd-text">ansible-playbook</span> <span class="path">playbooks/site.yml</span> <span class="flag">-v</span>
+
+<span class="comment"># Solo en un grupo específico</span>
+<span class="prompt">$ </span><span class="cmd-text">ansible-playbook</span> <span class="path">playbooks/site.yml</span> <span class="flag">--limit</span> <span class="arg">webservers</span></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     CHEAT SHEET
+══════════════════════════════════════════════════ -->
+<div id="cheatsheet" class="panel">
+  <p class="section-title">referencia rápida</p>
+
+  <p class="section-title" style="margin-top:1.5rem">navegación</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Comando</th><th>Descripción</th><th>Ejemplo</th></tr></thead>
+      <tbody>
+        <tr><td>pwd</td><td>Muestra directorio actual</td><td>pwd</td></tr>
+        <tr><td>ls -la</td><td>Lista con permisos y ocultos</td><td>ls -la /etc/ansible</td></tr>
+        <tr><td>cd ~</td><td>Ir al home</td><td>cd ~</td></tr>
+        <tr><td>cd ..</td><td>Subir un nivel</td><td>cd ..</td></tr>
+        <tr><td>cd -</td><td>Volver al dir anterior</td><td>cd -</td></tr>
+        <tr><td>tree -L 2</td><td>Vista árbol, 2 niveles</td><td>tree -L 2 ~/ansible-lab</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="section-title" style="margin-top:1.5rem">archivos y directorios</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Comando</th><th>Descripción</th><th>Ejemplo</th></tr></thead>
+      <tbody>
+        <tr><td>mkdir -p</td><td>Crear directorio(s) con ruta</td><td>mkdir -p roles/web/{tasks,handlers}</td></tr>
+        <tr><td>touch</td><td>Crear archivo vacío</td><td>touch playbooks/site.yml</td></tr>
+        <tr><td>cat</td><td>Mostrar contenido</td><td>cat inventario/hosts</td></tr>
+        <tr><td>nano</td><td>Editor interactivo</td><td>nano ansible.cfg</td></tr>
+        <tr><td>echo "text" ></td><td>Sobreescribir archivo</td><td>echo "[web]" > hosts</td></tr>
+        <tr><td>echo "text" >></td><td>Agregar al final</td><td>echo "192.168.1.1" >> hosts</td></tr>
+        <tr><td>cp -r</td><td>Copiar dir recursivo</td><td>cp -r roles/web roles/app</td></tr>
+        <tr><td>mv</td><td>Mover / renombrar</td><td>mv setup.yml install.yml</td></tr>
+        <tr><td>rm -rf</td><td>Borrar directorio (cuidado)</td><td>rm -rf roles/backup</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="section-title" style="margin-top:1.5rem">permisos</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Comando</th><th>Descripción</th><th>Ejemplo</th></tr></thead>
+      <tbody>
+        <tr><td>chmod 644</td><td>rw-r--r-- (archivos config)</td><td>chmod 644 ansible.cfg</td></tr>
+        <tr><td>chmod 755</td><td>rwxr-xr-x (directorios)</td><td>chmod 755 playbooks/</td></tr>
+        <tr><td>chmod 600</td><td>rw------- (claves SSH)</td><td>chmod 600 ~/.ssh/id_rsa</td></tr>
+        <tr><td>chown user:group</td><td>Cambiar propietario</td><td>sudo chown seba:seba archivo</td></tr>
+        <tr><td>find ... -exec chmod</td><td>Permisos en masa</td><td>find . -type f -exec chmod 644 {} \;</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="section-title" style="margin-top:1.5rem">ansible</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Comando</th><th>Descripción</th><th>Ejemplo</th></tr></thead>
+      <tbody>
+        <tr><td>ansible all -m ping</td><td>Verificar conectividad</td><td>ansible all -m ping</td></tr>
+        <tr><td>ansible-inventory</td><td>Ver inventario</td><td>ansible-inventory --list -y</td></tr>
+        <tr><td>ansible-playbook --check</td><td>Simulación (dry run)</td><td>ansible-playbook site.yml --check</td></tr>
+        <tr><td>ansible-playbook</td><td>Ejecutar playbook</td><td>ansible-playbook site.yml</td></tr>
+        <tr><td>ansible-playbook -v</td><td>Modo verbose</td><td>ansible-playbook site.yml -v</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</main>
+
+<footer>
+  <p>Guía para estudiantes de tecnología &nbsp;·&nbsp; Fedora Server + Ansible &nbsp;·&nbsp; <a href="#">Linux → Ansible</a></p>
+</footer>
+
+<div id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</div>
+
+<script>
+  function showTab(id, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function toggle(el) {
+    const card = el.closest('.cmd-card');
+    card.classList.toggle('open');
+  }
+
+  function copyCode(btn) {
+    const pre = btn.closest('.code-block').querySelector('pre');
+    const text = pre.innerText
+      .split('\n')
+      .map(line => line.replace(/^\$ /, '').replace(/^  .+$/, '').trim())
+      .filter(line => line && !line.startsWith('#') && !line.startsWith('←'))
+      .join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✓ copiado';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  window.addEventListener('scroll', () => {
+    const btn = document.getElementById('scroll-top');
+    btn.classList.toggle('visible', window.scrollY > 300);
+  });
+</script>
+</body>
+</html>
